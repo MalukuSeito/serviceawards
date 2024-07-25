@@ -1,0 +1,25 @@
+spring:
+  mvc:
+    format:
+      date-time: iso
+  application:
+    name: serviceawards
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            clientId: --
+            clientSecret: --
+          google:
+            client-id:--
+            client-secret: --
+server:
+  port: 8088
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 80

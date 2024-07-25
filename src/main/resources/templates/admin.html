@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link th:href="@{/webjars/bootstrap/5.3.3/css/bootstrap.min.css}" rel="stylesheet" />
+    <script th:src="@{/webjars/bootstrap/5.3.3/js/bootstrap.bundle.min.js}" defer></script>
+    <script th:src="@{/webjars/htmx.org/1.9.12/dist/htmx.min.js}" defer></script>
+    <meta charset="UTF-8">
+    <title>Service Award Admin</title>
+</head>
+<body>
+<div class="container-xl">
+    <div class="row">
+        <div class="col-12" id="seasons" th:fragment="seasons">
+            <h1>Reward Seasons</h1>
+            <ul class="nav justify-content-center" th:fragment="nav">
+                <li class="nav-item" th:each="s:${seasons}">
+                    <a class="nav-link" role="button" th:classappend="${season.id == s.id} ? 'active'" th:text="${s.id}" hx-target="#seasontable" th:attr="hx-get='/admin/' + ${s.id}" th:href="'admin/' + ${s.id}"></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-black-50" data-bs-toggle="collapse" href="#newSeason" role="button">+</a>
+                </li>
+            </ul>
+            <div class="collapse" id="newSeason">
+                <form action="newSeason" method="post" hx-post="/newSeason" hx-swap="outerHTML" hx-target="#seasons">
+                    <div class="form-floating mb-3">
+                        <input class="form-control" id="newSeasonName" placeholder="10A" name="id">
+                        <label for="newSeasonName">Season ID</label>
+                    </div>
+                    <div class="form-floating">
+                        <input type="date" class="form-control" id="newSeasonStart" name="start">
+                        <label for="newSeasonStart">Season Start</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="date" class="form-control" id="newSeasonEnd" name="end">
+                        <label for="newSeasonEnd">Season End</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary mb-3">Create Season</button>
+                </form>
+            </div>
+            <div id="seasontable" th:fragment="seasontable">
+                <h2>Service Awards Season <span th:if="${season != null}" th:text="${season.id}"></span></h2>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Name</th>
+                        <th>Downtime</th>
+                        <th>Gold</th>
+                        <th>Description</th>
+                        <th>URL</th>
+                        <th>Level Up</th>
+                        <th>Repeatable</th>
+                        <th>..</th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-group-divider" th:if="${season}" hx-swap="outerHTML">
+                    <tr th:fragment="entry" th:each="reward,index:${season.rewards}" th:if="!${edit}">
+                        <td th:text="${reward.level.name}+' ('+${reward.level.cost}+'h)'"></td>
+                        <td th:text="${reward.name}"></td>
+                        <td th:text="${reward.downtime}"></td>
+                        <td th:text="${reward.gp}"></td>
+                        <td th:text="${#strings.abbreviate(reward.description, 30)}" th:attr="title=${reward.description}"></td>
+                        <td th:attr="title=${reward.url}"><a th:href="${reward.url}" th:text="${#strings.abbreviate(reward.url, 10)}"></a></td>
+                        <td th:text="${reward.allowsLevel}"></td>
+                        <td th:text="${reward.repeatable}"></td>
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-sm btn-primary" hx-target="closest tr" th:attr="hx-get='/admin/'+${season.id}+'/'+${index.index+offset}+'?edit=true'">Edit</button>
+                            <button type="button" class="btn btn-sm btn-danger" th:attr="hx-delete='/admin/'+${season.id}+'/'+${index.index+offset}" hx-target="#seasontable" hx-confirm="Are you sure you want to delete this Reward Level? It will not affect existing rewards" >Delete</button>
+                        </td>
+                    </tr>
+                    <tr th:fragment="entry" th:each="reward,index:${season.rewards}" th:if="${edit}">
+                        <td>
+                            <select th:attr="form='reward_'+${index.index+offset}" class="w-100 rewardlevelselect" name="level">
+                                <option th:each="level:${levels}" th:attr="value=${level.id}" th:selected="${reward.level.id == level.id}" th:text="${level.name}+' ('+${level.cost}+'h)'"></option>
+                            </select>
+                        </td>
+                        <td><input class="w-100" type="text" placeholder="Reward" name="name" th:attr="form='reward_'+${index.index+offset},value=${reward.name}"></td>
+                        <td><input class="w-100" type="number" placeholder="Downtime" name="downtime" th:attr="form='reward_'+${index.index+offset},value=${reward.downtime}"></td>
+                        <td><input class="w-100" type="number" placeholder="GP" name="gp" th:attr="form='reward_'+${index.index+offset},value=${reward.gp}"></td>
+                        <td><textarea class="w-100" placeholder="Description" name="description" th:text="${reward.description}" th:attr="form='reward_'+${index.index+offset}"></textarea></td>
+                        <td><input class="w-100" type="text" placeholder="URL" name="url" th:attr="form='reward_'+${index.index+offset},value=${reward.url}"></td>
+                        <td><input class="w-100" type="checkbox" name="allowsLevel" th:checked="${reward.allowsLevel}" th:attr="form='reward_'+${index.index+offset}"></td>
+                        <td><input class="w-100" type="checkbox" name="repeatable" th:checked="${reward.repeatable}" th:attr="form='reward_'+${index.index+offset}"></td>
+                        <td class="text-nowrap">
+                            <form th:attr="id='reward_'+${index.index+offset},action='/admin/'+${season.id}+'/'+${index.index+offset},hx-put='/admin/'+${season.id}+'/'+${index.index+offset}" hx-target="closest tr">
+                                <button type="button" class="btn btn-sm btn-secondary" hx-target="closest tr" th:attr="hx-get='/admin/'+${season.id}+'/'+${index.index+offset}+'?edit=false'">Cancel</button>
+                                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-group-divider">
+                        <tr>
+                            <td>
+                                <select form="newReward"  class="w-100 rewardlevelselect" name="level">
+                                    <option th:each="level:${levels}" th:attr="value=${level.id}" th:text="${level.name}+' ('+${level.cost}+'h)'"></option>
+                                </select>
+                            </td>
+                            <td><input form="newReward" class="w-100" type="text" placeholder="Reward" name="name"></td>
+                            <td><input form="newReward" class="w-100" type="number" placeholder="Downtime" name="downtime"></td>
+                            <td><input form="newReward" class="w-100" type="number" placeholder="GP" name="gp"></td>
+                            <td></td>
+                            <td></td>
+                            <td><input form="newReward" class="w-100" type="checkbox" name="allowsLevel"></td>
+                            <td><input form="newReward" class="w-100" type="checkbox" name="repeatable"></td>
+                            <td>
+                                <form id="newReward" th:attr="action='/admin/'+${season.id},hx-post='/admin/'+${season.id}" method="post" hx-post="/level" hx-swap="beforeend" hx-target="previous tbody">
+                                    <button class="btn btn-sm btn-primary">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                           <td colspan="8"><input form="newReward" class="w-100" name="url" placeholder="URL"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="8"><textarea form="newReward" class="w-100" name="description" placeholder="Description"></textarea></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <button th:if="${season}" class="btn btn-danger" th:attr="hx-delete='/admin/'+${season.id}" hx-confirm="Are you sure you want to delete the season?" hx-swap="outerHTML" hx-target="#seasons">Delete Season</button>
+            </div>
+        </div>
+        <div class="col-12">
+            <h1>Reward Levels</h1>
+
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Cost</th>
+                        <th title="Used by 'as player' rewards">Costs a Single DM Session</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody class="table-group-divider" hx-target="closest tr" hx-swap="outerHTML">
+                    <tr th:each="level:${levels}" th:if="!${edit}" th:fragment="line">
+                        <td th:text="${level.id}"></td>
+                        <td th:text="${level.name}"></td>
+                        <td th:text="${level.cost}"></td>
+                        <td th:text="${level.singleSession}"></td>
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-sm btn-primary" th:attr="hx-get='/level/'+${level.id} + '?edit=true'">Edit</button>
+                            <button type="button" class="btn btn-sm btn-danger" th:attr="hx-delete='/level/'+${level.id}" hx-confirm="Are you sure you want to delete this Reward Level? It will not affect existing rewards" >Delete</button>
+                        </td>
+                        <td th:fragment="rewardsswap" th:if="${levelIds}">
+                            <select class="w-100 rewardlevelselect" name="level" hx-swap-oob="innerHTML:.rewardlevelselect">
+                                <option th:each="level:${levelIds}" th:attr="value=${level.id}" th:text="${level.name}+' ('+${level.cost}+'h)'"></option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr th:each="level:${levels}" th:if="${edit}" th:fragment="line">
+                        <td th:text="${level.id}"></td>
+                        <td><input th:attr="form='level_'+${level.id},value=${level.name}" name="name"/></td>
+                        <td><input type="number" th:attr="form='level_'+${level.id},value=${level.cost}" name="cost"/></td>
+                        <td><input type="checkbox" name="singleSession" th:attr="form='level_'+${level.id}" th:checked="${level.singleSession}"></td>
+                        <td class="text-nowrap">
+                            <form action="level" method="post" th:attr="id='level_'+${level.id},hx-put='/level/'+${level.id}" hx-swap="outerHTML" hx-target="closest tr">
+                                <button type="button" class="btn btn-sm btn-secondary" th:attr="hx-get='/level/'+${level.id} + '?edit=false'">Cancel</button>
+                                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot class="table-group-divider">
+                    <tr>
+                        <td><input form="newLevel" class="w-100" placeholder="ID" name="id"></td>
+                        <td><input form="newLevel" class="w-100" placeholder="uncommon" name="name"></td>
+                        <td><input form="newLevel" class="w-100" type="number" placeholder="5" name="cost"></td>
+                        <td><input form="newLevel" type="checkbox" name="singleSession"></td>
+                        <td>
+                            <form id="newLevel" action="level" method="post" hx-post="/level" hx-swap="beforeend" hx-target="previous tbody">
+                                <button class="btn btn-sm btn-primary">Save</button>
+                            </form>
+                        </td>
+                        </form>
+                    </tr>
+                    </tfoot>
+                </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
