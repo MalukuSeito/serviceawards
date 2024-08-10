@@ -9,11 +9,11 @@ spring:
       client:
         registration:
           github:
-            clientId: --
-            clientSecret: --
+            clientId: hidden
+            clientSecret: hidden
           google:
-            client-id:--
-            client-secret: --
+            client-id: hidden
+            client-secret: hidden
 server:
   port: 8088
 ---

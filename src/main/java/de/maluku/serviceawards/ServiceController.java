@@ -293,9 +293,9 @@ public class ServiceController {
       model.addAttribute("earned", LogEntry.getStats(latest.getId(), user.getLogEntries(), user.getAssignments()));
       model.addAttribute("used", Assigment.getStats(latest, user.getAssignments()));
       model.addAttribute("assignableLogs", user.available(latest.getId()));
-      response.addHeader("HX-Push-Url", "/log/" + uid + "/" + id);
+      response.addHeader("HX-Push-Url", "/log/" + uid + "/" + latest.getId());
       response.addHeader("HX-Trigger", "logsChanged");
-      model.addAttribute("user", User.builder().userId(user.getUserId()).logEntries(List.of(entry)).build());
+      model.addAttribute("user", User.builder().userId(user.getUserId()).logEntries(List.of(entry)).assignments(user.getAssignments()).build());
       return "overview :: log";
     }
     else {
